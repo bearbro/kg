@@ -15,6 +15,7 @@ class KgItem(scrapy.Item):
 
 
 class ConceptItem(scrapy.Item):
+    c_nub_list = scrapy.Field()
     c_name_list = scrapy.Field()
     c_top3_list = scrapy.Field()
     c_analysis_list = scrapy.Field()

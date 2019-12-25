@@ -64,7 +64,7 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                     yield scrapy.Request(url=url, callback=self.download_parse)  # 爬取到的页面如何处理？提交给parse方法处理
                 if code in ["000031", "000032", "000033", "000034"]:
                     break
-        return
+        # return
         # TODO
         # if not self.online:
         #     cls.custom_settings={'kg.SeleniumMiddleware.CommonMiddleware': None}
@@ -110,7 +110,12 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
         ##规则字典，可以从chrome获得
         xpaths_dict_c = dict()
         ## 常规概念
-        xpaths_dict_c['c_name_list'] = '(//div[@id="concept"]//table[@class="gnContent"])[1]/tbody/tr/td[2]/text()'
+        xpaths_dict_c['c_nub_list'] = '(//div[@id="concept"]//table[@class="gnContent"])[1]/tbody/tr/td[1]/text()[1]'
+        item['c_nub_list'] = list(map(lambda prod: prod.strip(),
+                                       response.xpath(xpaths_dict_c['c_nub_list']).extract()
+                                       ))[::2]
+
+        xpaths_dict_c['c_name_list'] = '(//div[@id="concept"]//table[@class="gnContent"])[1]/tbody/tr/td[2]/text()[1]'
         item['c_name_list'] = list(map(lambda prod: prod.strip(),
                                        response.xpath(xpaths_dict_c['c_name_list']).extract()
                                        ))
@@ -142,6 +147,12 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                                      response.xpath(xpaths_dict_c['c_name_list']).extract()
                                      ))
         item['c_name_list'] += c_name_list_other
+        xpaths_dict_c['c_nub_list'] = '(//div[@id="other"]//table[@class="gnContent"])[1]/tbody/tr/td[1]/text()[1]'
+        c_nub_list_other = list(map(lambda prod: prod.strip(),
+                                     response.xpath(xpaths_dict_c['c_nub_list']).extract()
+                                     ))[::2]
+        item['c_nub_list'] += c_nub_list_other
+
         idx = -1
         try:
             for i in range(len(c_name_list_other)):

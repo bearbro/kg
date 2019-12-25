@@ -240,7 +240,7 @@ class KgPipeline(object):
             code = item['code']
             # Concept
             # 创建表格
-            col_head = ['c_name_list', 'c_top3_list', 'c_analysis_list', 'c_type_list']
+            col_head = ['c_nub_list','c_name_list', 'c_top3_list', 'c_analysis_list', 'c_type_list']
             col_head += ['scrapy_time', 'code']
             sql_sub = ""
             for ci in col_head:
