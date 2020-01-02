@@ -19,7 +19,7 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
     if 'win32' == sys.platform:
         download_path = r"C:/Users/77385/Desktop/data/%s" % name
     else:
-        download_path = "/Users/brobear/Downloads/%s2" % name
+        download_path = "/Users/brobear/Downloads/%s" % name
         # download_path = "../data/%s" % name
     online = False
 
