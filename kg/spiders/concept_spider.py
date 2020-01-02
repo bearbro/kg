@@ -62,8 +62,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                 file_name = "%s/%s_%s.html" % (self.download_path, code, self.name)
                 if not os.path.exists(file_name):
                     yield scrapy.Request(url=url, callback=self.download_parse)  # 爬取到的页面如何处理？提交给parse方法处理
-                if code in ["000031", "000032", "000033", "000034"]:
-                    break
+                # if code in ["000031", "000032", "000033", "000034"]:
+                #     break
         # return
         # TODO
         # if not self.online:
@@ -77,8 +77,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
             else:
                 url = 'file://%s/%s_%s.html' % (self.download_path, code, self.name)  # 本地
             yield scrapy.Request(url=url, callback=self.parse)  # 爬取到的页面如何处理？提交给parse方法处理
-            if code in ["000031", "000032", "000033", "000034"]:
-                break
+            # if code in ["000100"]:
+            #     break
 
     # 下载网页
     def download_parse(self, response):
@@ -176,16 +176,18 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                 len(item['c_name_list']) != len(item['c_analysis_list']):
             print('error', code)
             return
-        theme_points_name = '//*[@id="material"]/div[2]/div[@class="gntc"]/div/span/span/text()'
+        # theme_points_name = '//*[@id="material"]/div[2]/div[@class="gntc"]/div/span/span/text()'
+        theme_points_name = '//*[@id="material"]/div[2]/div[@class="gntc"]//div[contains(@class,"ifindCon")]/span/span/text()[1]'
         nub_name= list(map(lambda prod: prod.strip(),
                                                   response.xpath(theme_points_name).extract()
                                                   ))
         item['theme_points_name_list']=[ i.split(":")[1] for i in nub_name]
         item['theme_points_nub_list'] = [ i.split(":")[0] for i in nub_name]
-        theme_points_info = '//*[@id="material"]/div[2]/div[@class="gntc"]/div/div[2]/text()'
+        # theme_points_info = '//*[@id="material"]/div[2]/div[@class="gntc"]/div/div[2]/text()'
+        theme_points_info = '//*[@id="material"]/div[2]/div[@class="gntc"]//div[contains(@class,"ifindCon")]//div[contains(@class,"comPoint")]/text()[1]'
         item['theme_points_info_list'] = list(map(lambda prod: prod.strip(),
                                                   response.xpath(theme_points_info).extract()
-                                                  ))[::2]
+                                                  ))
 
         # 保存数据到数据库
         yield item
