@@ -93,7 +93,7 @@ DEFAULT_REQUEST_HEADERS = {
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'kg.middlewares.RandomUserAgent': 400,
-    'kg.SeleniumMiddleware.CommonMiddleware': 543,
+    # 'kg.SeleniumMiddleware.CommonMiddleware': 543,
 
 }
 
@@ -106,7 +106,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    # 'kg.pipelines.KgPipeline': 1,
+    'kg.pipelines.KgPipeline': 1,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

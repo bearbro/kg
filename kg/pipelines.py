@@ -325,5 +325,134 @@ class KgPipeline(object):
                 except Exception as e:
                     print(sql)
                     print('error', code, item['theme_points_nub_list'][i], e)
-            
+        elif spider.name == "holder":
+            print(item['code'])
+            scrapy_time = item['scrapy_time']
+            code = item['code']
+            # 股东人数
+            # Holder
+            # 创建表格
+            col_head = ['h_date_list', 'h_number_list', 'h_number_rate_list', 'h_stock_number_list',
+                        'h_stock_number_rate_list', 'h_industry_avg_list']
+
+            col_head += ['scrapy_time', 'code']
+            sql_sub = ""
+            for ci in col_head:
+                i = re.sub(r'_list$', '', ci)
+                sql_sub += '%s varchar(255) ,\n' % i
+            sql = """Create Table If Not Exists Holder(
+                                                %s
+                                                primary key(scrapy_time ,code,h_date)
+                                                ) DEFAULT CHARSET=utf8 """ % sql_sub
+            # print(sql)
+            self.cursor.execute(sql)
+            # 提交sql语句
+            self.connect.commit()
+            # 插入数据
+            sql_sub1 = ", ".join([re.sub(r'_list$', '', i) for i in col_head])
+            for i in range(len(item['h_date_list'])):
+                sql_sub2 = ""
+                for ci in col_head:
+                    if ci == 'scrapy_time':
+                        sql_sub2 += "'%s', " % scrapy_time
+                    elif ci == 'code':
+                        sql_sub2 += "'%s' " % code
+                    elif ci in item:
+                        sql_sub2 += "'%s', " % item[ci][i]
+                    else:
+                        sql_sub2 += "'%s', " % self.my_NULL
+                sql = """insert into Holder( %s ) values (%s) """ % (sql_sub1, sql_sub2)
+                try:
+                    self.cursor.execute(sql)
+                    # 提交sql语句
+                    self.connect.commit()
+                except Exception as e:
+                    print(sql)
+                    print('error', code, item['h_date_list'][i], e)
+
+            # 十大流通股东
+            # Float_Holder_TOP10
+            # 创建表格
+            col_head = ['f_h_top10_date_list', 'f_h_top10_name_list', 'f_h_top10_stock_number_list',
+                        'f_h_top10_stock_rate_list', 'f_h_top10_stock_percent_list',
+                        'f_h_top10_stock_actual_up_down_list',
+                        'f_h_top10_stock_type_list', 'f_h_top10_order_list']
+
+            col_head += ['scrapy_time', 'code']
+            sql_sub = ""
+            for ci in col_head:
+                i = re.sub(r'_list$', '', ci)
+                sql_sub += '%s varchar(255) ,\n' % i
+            sql = """Create Table If Not Exists Float_Holder_TOP10(
+                                                    %s
+                                                    primary key(scrapy_time ,code,f_h_top10_date,f_h_top10_order)
+                                                    ) DEFAULT CHARSET=utf8 """ % sql_sub
+            # print(sql)
+            self.cursor.execute(sql)
+            # 提交sql语句
+            self.connect.commit()
+            # 插入数据
+            sql_sub1 = ", ".join([re.sub(r'_list$', '', i) for i in col_head])
+            for i in range(len(item['f_h_top10_date_list'])):
+                sql_sub2 = ""
+                for ci in col_head:
+                    if ci == 'scrapy_time':
+                        sql_sub2 += "'%s', " % scrapy_time
+                    elif ci == 'code':
+                        sql_sub2 += "'%s' " % code
+                    elif ci in item:
+                        sql_sub2 += "'%s', " % item[ci][i]
+                    else:
+                        sql_sub2 += "'%s', " % self.my_NULL
+                sql = """insert into Float_Holder_TOP10( %s ) values (%s) """ % (sql_sub1, sql_sub2)
+                try:
+                    self.cursor.execute(sql)
+                    # 提交sql语句
+                    self.connect.commit()
+                except Exception as e:
+                    print(sql)
+                    print('error', code, item['f_h_top10_date_list'][i], e)
+
+            # 十大股东
+            # Holder_TOP10
+            # 创建表格
+            col_head = ['h_top10_date_list', 'h_top10_name_list', 'h_top10_stock_number_list',
+                        'h_top10_stock_rate_list',
+                        'h_top10_stock_percent_list', 'h_top10_stock_actual_up_down_list', 'h_top10_stock_type_list',
+                        'h_top10_order_list']
+
+            col_head += ['scrapy_time', 'code']
+            sql_sub = ""
+            for ci in col_head:
+                i = re.sub(r'_list$', '', ci)
+                sql_sub += '%s varchar(255) ,\n' % i
+            sql = """Create Table If Not Exists Holder_TOP10(
+                                                       %s
+                                                       primary key(scrapy_time ,code,h_top10_date,h_top10_order)
+                                                       ) DEFAULT CHARSET=utf8 """ % sql_sub
+            # print(sql)
+            self.cursor.execute(sql)
+            # 提交sql语句
+            self.connect.commit()
+            # 插入数据
+            sql_sub1 = ", ".join([re.sub(r'_list$', '', i) for i in col_head])
+            for i in range(len(item['h_top10_date_list'])):
+                sql_sub2 = ""
+                for ci in col_head:
+                    if ci == 'scrapy_time':
+                        sql_sub2 += "'%s', " % scrapy_time
+                    elif ci == 'code':
+                        sql_sub2 += "'%s' " % code
+                    elif ci in item:
+                        sql_sub2 += "'%s', " % item[ci][i]
+                    else:
+                        sql_sub2 += "'%s', " % self.my_NULL
+                sql = """insert into Holder_TOP10( %s ) values (%s) """ % (sql_sub1, sql_sub2)
+                try:
+                    self.cursor.execute(sql)
+                    # 提交sql语句
+                    self.connect.commit()
+                except Exception as e:
+                    print(sql)
+                    print('error', code, item['h_top10_date_list'][i], e)
         return item  # 必须实现返回

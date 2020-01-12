@@ -7,7 +7,7 @@ from pydispatch import dispatcher
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options  # 使用无头浏览器
 from scrapy.http import HtmlResponse
-from kg.items import CompanyItem, ConceptItem
+from kg.items import CompanyItem, ConceptItem, HolderItem
 import sys
 
 
@@ -77,8 +77,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
             else:
                 url = 'file://%s/%s_%s.html' % (self.download_path, code, self.name)  # 本地
             yield scrapy.Request(url=url, callback=self.parse)  # 爬取到的页面如何处理？提交给parse方法处理
-            # if code in ["000100"]:
-            #     break
+            if code in ["000002"]:
+                break
 
     # 下载网页
     def download_parse(self, response):
@@ -106,14 +106,17 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                                         time.localtime(os.path.getmtime(
                                             re.sub("^[C|c]/", 'c:/', response.url[7:], 1)
                                         )))
-        item = dict()
+        item = HolderItem()
+        item['code'] = code
+        item['scrapy_time'] = scrapy_time
+
         ##规则字典，可以从chrome获得
         xpaths_dict_h = dict()
         # 股东人数
         xpaths_dict_h['h_date_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[1]/tbody/tr/th/div/text()'
         # 股东人数越少，则代表筹码越集中，股价越有可能上涨
         xpaths_dict_h[
-            'h_number_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[1]/td[1]/div/text()'  # 股东总人数
+            'h_number_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[1]/td/div/text()'  # 股东总人数
         xpaths_dict_h[
             'h_number_rate_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[2]/td/span/text()'  # 较上期变化
         xpaths_dict_h[
@@ -123,10 +126,20 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
         xpaths_dict_h[
             'h_industry_avg_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[5]/td/text()'  # 行业平均（户）
         try:
-            for k, v in xpaths_dict_h:
-                item[k] = list(map(lambda prod: prod.strip(),
-                                   response.xpath(v).extract()
-                                   ))
+            for k, v in xpaths_dict_h.items():
+                y = list(map(lambda prod: prod.strip(),
+                             response.xpath(v).extract()
+                             ))
+                # if k in['h_number_rate_list','h_stock_number_rate_list'] :
+                #     x = y
+                #     for i in range(len(x)):
+                #         if '不变' in x[i]:
+                #             y[i] = '不变'
+                #         elif '新进' in x[i]:
+                #             y[i] = '新进'
+                #         else:
+                #             y[i] = re.findall(r'>-?\d+.\d+[万|亿]<', x[i])[0][1:-1]
+                item[k] = y
         except Exception as e:
             print('error', code, e)
 
@@ -156,8 +169,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
             idx = 0
             for datei in date_list:
                 idx += 1
-                for k, v in xpaths_dict_f_h_top10:
-                    v = v.replase('fher_1', 'fher_%d' % idx)
+                for k, v in xpaths_dict_f_h_top10.items():
+                    v = v.replace('fher_1', 'fher_%d' % idx)
                     y = list(map(lambda prod: prod.strip(),
                                  response.xpath(v).extract()
                                  ))
@@ -169,7 +182,7 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                             elif '新进' in x[i]:
                                 y[i] = '新进'
                             else:
-                                y[i] = re.findall(r'-?\d+.\d+万<', x[i])[1:-1]
+                                y[i] = re.findall(r'>-?\d+.\d+[万|亿]<', x[i])[0][1:-1]
                     elif k == 'f_h_top10_stock_actual_up_down_list':
                         x = y
                         for i in range(len(x)):
@@ -178,18 +191,19 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                             elif '新进' in x[i]:
                                 y[i] = '新进'
                             else:
-                                y[i] = re.findall(r'-?\d+.\d+%<', x[i])[1:-1]
+                                y[i] = re.findall(r'>-?\d+.\d+%<', x[i])[0][1:-1]
                     item[k] = item.get(k, []) + y
                 k = 'f_h_top10_date_list'
-                item[k] = item.get(k, []) + [datei] * 10
+                cc = len(y)
+                item[k] = item.get(k, []) + [datei] * cc
                 k = 'f_h_top10_order_list'
-                item[k] = item.get(k, []) + list(range(1,11))
+                item[k] = item.get(k, []) + list(range(1, cc + 1))
 
 
         except Exception as e:
             print('error', code, e)
 
-        # 十大股东
+            # 十大股东
             # 十大流通股东 floating stockholder
 
             xpaths_dict_h_top10 = dict()
@@ -216,8 +230,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                 idx = 0
                 for datei in date_list:
                     idx += 1
-                    for k, v in xpaths_dict_h_top10:
-                        v = v.replase('ther_1', 'fher_%d' % idx)
+                    for k, v in xpaths_dict_h_top10.items():
+                        v = v.replace('ther_1', 'fher_%d' % idx)
                         y = list(map(lambda prod: prod.strip(),
                                      response.xpath(v).extract()
                                      ))
@@ -229,7 +243,7 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                                 elif '新进' in x[i]:
                                     y[i] = '新进'
                                 else:
-                                    y[i] = re.findall(r'-?\d+.\d+万<', x[i])[1:-1]
+                                    y[i] = re.findall(r'>-?\d+.\d+[万|亿]<', x[i])[0][1:-1]
                         elif k == 'h_top10_stock_actual_up_down_list':
                             x = y
                             for i in range(len(x)):
@@ -238,12 +252,13 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                                 elif '新进' in x[i]:
                                     y[i] = '新进'
                                 else:
-                                    y[i] = re.findall(r'-?\d+.\d+%<', x[i])[1:-1]
+                                    y[i] = re.findall(r'>-?\d+.\d+%<', x[i])[0][1:-1]
                         item[k] = item.get(k, []) + y
                     k = 'h_top10_date_list'
-                    item[k] = item.get(k, []) + [datei] * 10
+                    cc = len(y)
+                    item[k] = item.get(k, []) + [datei] * cc
                     k = 'h_top10_order_list'
-                    item[k] = item.get(k, []) + list(range(1,11))
+                    item[k] = item.get(k, []) + list(range(1, 1 + cc))
             except Exception as e:
                 print('error', code, e)
         # 控股层级关系
