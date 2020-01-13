@@ -90,11 +90,11 @@ class KgPipeline(object):
                 self.connect.commit()
             except Exception as e:
                 print(sql)
-                print('error',code, e)
+                print('error', code, e)
 
             # Person
             # 创建表格
-            col_head = ['p_name_list', 'p_job_list', 'p_notice_date_list','p_term_date_list',
+            col_head = ['p_name_list', 'p_job_list', 'p_notice_date_list', 'p_term_date_list',
                         'p_intro_list', 'p_salary_list', 'p_shares_number_list', 'p_mainintro_list',
                         'p_mainintro_date_list', 'p_type_list']
             col_head += ['scrapy_time', 'code']
@@ -136,7 +136,7 @@ class KgPipeline(object):
                     self.connect.commit()
                 except Exception as e:
                     print(sql)
-                    print('error',code, item['Person']['p_name_list'][i], e)
+                    print('error', code, item['Person']['p_name_list'][i], e)
 
             # Stock
             # 创建表格
@@ -181,7 +181,7 @@ class KgPipeline(object):
                 self.connect.commit()
             except Exception as e:
                 print(sql)
-                print('error',code, e)
+                print('error', code, e)
 
             # C_holding_C
             # 创建表格
@@ -233,14 +233,14 @@ class KgPipeline(object):
                     self.connect.commit()
                 except Exception as e:
                     print(sql)
-                    print('error',code, item['C_holding_C']['c_consolidated_statement_name_list'][i], e)
+                    print('error', code, item['C_holding_C']['c_consolidated_statement_name_list'][i], e)
         elif spider.name == "concept":
             print(item['code'])
             scrapy_time = item['scrapy_time']
             code = item['code']
             # Concept
             # 创建表格
-            col_head = ['c_nub_list','c_name_list', 'c_top3_list', 'c_analysis_list', 'c_type_list']
+            col_head = ['c_nub_list', 'c_name_list', 'c_top3_list', 'c_analysis_list', 'c_type_list']
             col_head += ['scrapy_time', 'code']
             sql_sub = ""
             for ci in col_head:
@@ -284,7 +284,7 @@ class KgPipeline(object):
 
             # theme_points
             # 创建表格
-            col_head = ['theme_points_name_list','theme_points_nub_list', 'theme_points_info_list']
+            col_head = ['theme_points_name_list', 'theme_points_nub_list', 'theme_points_info_list']
             col_head += ['scrapy_time', 'code']
             sql_sub = ""
             for ci in col_head:
@@ -329,11 +329,17 @@ class KgPipeline(object):
             print(item['code'])
             scrapy_time = item['scrapy_time']
             code = item['code']
+            if code == '000021':
+                print(1)
             # 股东人数
             # Holder
             # 创建表格
-            col_head = ['h_date_list', 'h_number_list', 'h_number_rate_list', 'h_stock_number_list',
-                        'h_stock_number_rate_list', 'h_industry_avg_list']
+            col_head = ['h_date_list', 'h_number_list', 'h_number_rate_list',
+                        'h_number_A_list', 'h_number_A_rate_list',
+                        'h_number_B_list', 'h_number_H_list',
+                        'h_stock_number_list', 'h_stock_number_rate_list',
+                        'h_stock_number_A_list', 'h_stock_number_A_rate_list',
+                        'h_industry_avg_list']
 
             col_head += ['scrapy_time', 'code']
             sql_sub = ""
@@ -375,7 +381,7 @@ class KgPipeline(object):
             # 创建表格
             col_head = ['f_h_top10_date_list', 'f_h_top10_name_list', 'f_h_top10_stock_number_list',
                         'f_h_top10_stock_rate_list', 'f_h_top10_stock_percent_list',
-                        'f_h_top10_stock_actual_up_down_list',
+                        'f_h_top10_pledge_percent_list', 'f_h_top10_stock_actual_up_down_list',
                         'f_h_top10_stock_type_list', 'f_h_top10_order_list']
 
             col_head += ['scrapy_time', 'code']
@@ -393,32 +399,35 @@ class KgPipeline(object):
             self.connect.commit()
             # 插入数据
             sql_sub1 = ", ".join([re.sub(r'_list$', '', i) for i in col_head])
-            for i in range(len(item['f_h_top10_date_list'])):
-                sql_sub2 = ""
-                for ci in col_head:
-                    if ci == 'scrapy_time':
-                        sql_sub2 += "'%s', " % scrapy_time
-                    elif ci == 'code':
-                        sql_sub2 += "'%s' " % code
-                    elif ci in item:
-                        sql_sub2 += "'%s', " % item[ci][i]
-                    else:
-                        sql_sub2 += "'%s', " % self.my_NULL
-                sql = """insert into Float_Holder_TOP10( %s ) values (%s) """ % (sql_sub1, sql_sub2)
-                try:
-                    self.cursor.execute(sql)
-                    # 提交sql语句
-                    self.connect.commit()
-                except Exception as e:
-                    print(sql)
-                    print('error', code, item['f_h_top10_date_list'][i], e)
-
+            try:
+                for i in range(len(item['f_h_top10_date_list'])):
+                    sql_sub2 = ""
+                    for ci in col_head:
+                        if ci == 'scrapy_time':
+                            sql_sub2 += "'%s', " % scrapy_time
+                        elif ci == 'code':
+                            sql_sub2 += "'%s' " % code
+                        elif ci in item:
+                            sql_sub2 += "'%s', " % item[ci][i]
+                        else:
+                            sql_sub2 += "'%s', " % self.my_NULL
+                    sql = """insert into Float_Holder_TOP10( %s ) values (%s) """ % (sql_sub1, sql_sub2)
+                    try:
+                        self.cursor.execute(sql)
+                        # 提交sql语句
+                        self.connect.commit()
+                    except Exception as e:
+                        print(sql)
+                        print('error', code, item['f_h_top10_date_list'][i], e)
+            except Exception as e:
+                print('error-column', ci)
+                print('error', code, item['f_h_top10_date_list'][i], e)
             # 十大股东
             # Holder_TOP10
             # 创建表格
             col_head = ['h_top10_date_list', 'h_top10_name_list', 'h_top10_stock_number_list',
-                        'h_top10_stock_rate_list',
-                        'h_top10_stock_percent_list', 'h_top10_stock_actual_up_down_list', 'h_top10_stock_type_list',
+                        'h_top10_stock_rate_list', 'h_top10_stock_percent_list', 'h_top10_pledge_percent_list',
+                        'h_top10_stock_actual_up_down_list', 'h_top10_stock_type_list',
                         'h_top10_order_list']
 
             col_head += ['scrapy_time', 'code']
@@ -436,23 +445,27 @@ class KgPipeline(object):
             self.connect.commit()
             # 插入数据
             sql_sub1 = ", ".join([re.sub(r'_list$', '', i) for i in col_head])
-            for i in range(len(item['h_top10_date_list'])):
-                sql_sub2 = ""
-                for ci in col_head:
-                    if ci == 'scrapy_time':
-                        sql_sub2 += "'%s', " % scrapy_time
-                    elif ci == 'code':
-                        sql_sub2 += "'%s' " % code
-                    elif ci in item:
-                        sql_sub2 += "'%s', " % item[ci][i]
-                    else:
-                        sql_sub2 += "'%s', " % self.my_NULL
-                sql = """insert into Holder_TOP10( %s ) values (%s) """ % (sql_sub1, sql_sub2)
-                try:
-                    self.cursor.execute(sql)
-                    # 提交sql语句
-                    self.connect.commit()
-                except Exception as e:
-                    print(sql)
-                    print('error', code, item['h_top10_date_list'][i], e)
+            try:
+                for i in range(len(item['h_top10_date_list'])):
+                    sql_sub2 = ""
+                    for ci in col_head:
+                        if ci == 'scrapy_time':
+                            sql_sub2 += "'%s', " % scrapy_time
+                        elif ci == 'code':
+                            sql_sub2 += "'%s' " % code
+                        elif ci in item:
+                            sql_sub2 += "'%s', " % item[ci][i]
+                        else:
+                            sql_sub2 += "'%s', " % self.my_NULL
+                    sql = """insert into Holder_TOP10( %s ) values (%s) """ % (sql_sub1, sql_sub2)
+                    try:
+                        self.cursor.execute(sql)
+                        # 提交sql语句
+                        self.connect.commit()
+                    except Exception as e:
+                        print(sql)
+                        print('error', code, item['h_top10_date_list'][i], e)
+            except Exception as e:
+                print('error-column', ci)
+                print('error', code, item['h_top10_date_list'][i], e)
         return item  # 必须实现返回

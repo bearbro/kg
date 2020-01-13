@@ -62,8 +62,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                 file_name = "%s/%s_%s.html" % (self.download_path, code, self.name)
                 if not os.path.exists(file_name):
                     yield scrapy.Request(url=url, callback=self.download_parse)  # 爬取到的页面如何处理？提交给parse方法处理
-                if code in ["000031", "000032", "000033", "000034"]:
-                    break
+                # if code in ["000131", "000132", "000133", "000100"]:
+                #     break
         # return
         # TODO
         # if not self.online:
@@ -77,7 +77,7 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
             else:
                 url = 'file://%s/%s_%s.html' % (self.download_path, code, self.name)  # 本地
             yield scrapy.Request(url=url, callback=self.parse)  # 爬取到的页面如何处理？提交给parse方法处理
-            if code in ["000002"]:
+            if code in ["000031", "000032", "000033", "000034"]:
                 break
 
     # 下载网页
@@ -112,33 +112,70 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
 
         ##规则字典，可以从chrome获得
         xpaths_dict_h = dict()
-        # 股东人数
+        # 股东人数 todo 000002格式不同
         xpaths_dict_h['h_date_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[1]/tbody/tr/th/div/text()'
         # 股东人数越少，则代表筹码越集中，股价越有可能上涨
         xpaths_dict_h[
-            'h_number_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[1]/td/div/text()'  # 股东总人数
+            'h_number_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td/div/text()'  # 股东总人数
         xpaths_dict_h[
-            'h_number_rate_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[2]/td/span/text()'  # 较上期变化
+            'h_number_rate_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td'  # 较上期变化
         xpaths_dict_h[
-            'h_stock_number_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[3]/td/text()'  # 人均流通股数（股）
+            'h_number_A_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td/text()'  # A股东总人数
         xpaths_dict_h[
-            'h_stock_number_rate_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[4]/td/span/text()'  # 人均流通变化
+            'h_number_A_rate_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td'  # A变化
         xpaths_dict_h[
-            'h_industry_avg_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[5]/td/text()'  # 行业平均（户）
+            'h_number_B_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td/text()'  # B股东总人数
+        xpaths_dict_h[
+            'h_number_H_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td/text()'  # H股东总人数
+        xpaths_dict_h[
+            'h_stock_number_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td/text()'  # 人均流通股数（股）
+        xpaths_dict_h[
+            'h_stock_number_rate_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td'  # 人均流通变化
+        xpaths_dict_h[
+            'h_stock_number_A_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td/text()'  # 人均流通a股股数（股）
+        xpaths_dict_h[
+            'h_stock_number_A_rate_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td'  # 人均流通A股变化
+        xpaths_dict_h[
+            'h_industry_avg_list'] = '//*[@id="gdrsTable"]/div/div/div[2]/table[2]/tbody/tr[x]/td/text()'  # 行业平均（户）
+
+        xpaths_dict_h['h_th_list'] = '//*[@id="gdrsTable"]/div/div/div[1]/table[2]/tbody/tr/th/text()'
+        th = list(map(lambda prod: prod.strip(),
+                      response.xpath(xpaths_dict_h['h_th_list']).extract()
+                      ))
+        th2key = {'股东总人数(户)': 'h_number_list',
+                  '较上期变化': 'h_number_rate_list',
+                  'A股股东数（户）': 'h_number_A_list',
+                  'A股股东数变化': 'h_number_A_rate_list',
+                  'B股股东数(户)': 'h_number_B_list',
+                  'H股股东数(户)': 'h_number_H_list',
+                  '人均流通股(股)': 'h_stock_number_list',
+                  '人均流通变化': 'h_stock_number_rate_list',
+                  '人均流通A股(股)': 'h_stock_number_A_list',
+                  '人均流通A股变化': 'h_stock_number_A_rate_list',
+                  '行业平均(户)': 'h_industry_avg_list'}
+        th_k = [th2key[i] for i in th]
+
         try:
             for k, v in xpaths_dict_h.items():
-                y = list(map(lambda prod: prod.strip(),
-                             response.xpath(v).extract()
-                             ))
-                # if k in['h_number_rate_list','h_stock_number_rate_list'] :
-                #     x = y
-                #     for i in range(len(x)):
-                #         if '不变' in x[i]:
-                #             y[i] = '不变'
-                #         elif '新进' in x[i]:
-                #             y[i] = '新进'
-                #         else:
-                #             y[i] = re.findall(r'>-?\d+.\d+[万|亿]<', x[i])[0][1:-1]
+                if k in th2key.values():
+                    if k in th_k:
+                        th_idx = th_k.index(k) + 1
+                        v = xpaths_dict_h[k].replace('tr[x]', 'tr[%d]' % th_idx)
+                        y = list(map(lambda prod: prod.strip(),
+                                     response.xpath(v).extract()
+                                     ))
+                        if 'rate' in k:
+                            for xi in range(len(y)):
+                                if 'span' in y[xi]:
+                                    y[xi] = re.findall(r'-?\d+.\d+%', y[xi])[0]
+                                else:
+                                    y[xi] = y[xi][4:-5].strip()
+                    else:
+                        y = ['-'] * len(item['h_date_list'])
+                else:
+                    y = list(map(lambda prod: prod.strip(),
+                                 response.xpath(v).extract()
+                                 ))
                 item[k] = y
         except Exception as e:
             print('error', code, e)
@@ -148,50 +185,84 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
         xpaths_dict_f_h_top10 = dict()
         #
         xpaths_dict_f_h_top10['f_h_top10_date_list'] = '//*[@id="bd_1"]/div[1]/ul/li/a/text()'
-        # 持有数量(股)	持股变化(股)	占流通股比例	实际增减持	股份类型	持股详情
+        # 持有数量(股)	持股变化(股)	占流通股比例	质押占其直接持股比 实际增减持	股份类型	持股详情
         xpaths_dict_f_h_top10[
             'f_h_top10_name_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/th/a/text()'  #
         xpaths_dict_f_h_top10[
-            'f_h_top10_stock_number_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[1]/text()'
+            'f_h_top10_stock_number_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[x]/text()'
         xpaths_dict_f_h_top10[
-            'f_h_top10_stock_rate_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr[2]/td[2]'  #
+            'f_h_top10_stock_rate_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[x]'  #
         xpaths_dict_f_h_top10[
-            'f_h_top10_stock_percent_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[3]/text()'
+            'f_h_top10_stock_percent_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[x]/text()'
         xpaths_dict_f_h_top10[
-            'f_h_top10_stock_actual_up_down_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[4]'
+            'f_h_top10_pledge_percent_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[x]/text()'
         xpaths_dict_f_h_top10[
-            'f_h_top10_stock_type_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[5]/text()'  #
+            'f_h_top10_stock_actual_up_down_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[x]'
+        xpaths_dict_f_h_top10[
+            'f_h_top10_stock_type_list'] = '//*[@id="fher_1"]/table/tbody[1]/tr/td[x]/text()'
         # 持股详情 todo
         date_list = list(map(lambda prod: prod.strip(),
                              response.xpath(xpaths_dict_f_h_top10['f_h_top10_date_list']).extract()
                              ))
+
+        th2key = {
+            '机构或基金名称': 'f_h_top10_name_list',
+            '持有数量(股)': 'f_h_top10_stock_number_list',
+            '持股变化(股)': 'f_h_top10_stock_rate_list',
+            '占流通股比例': 'f_h_top10_stock_percent_list',
+            '质押占其直接持股比': 'f_h_top10_pledge_percent_list',
+            '实际增减持': 'f_h_top10_stock_actual_up_down_list',
+            '股份类型': 'f_h_top10_stock_type_list',
+            '持股详情': ''}
+
         try:
             idx = 0
             for datei in date_list:
                 idx += 1
+                xpaths_dict_f_h_top10['f_h_top10_th_list'] = '//*[@id="fher_%d"]/table/thead/tr/th/text()' % idx
+                th = list(map(lambda prod: prod.strip(),
+                              response.xpath(xpaths_dict_f_h_top10['f_h_top10_th_list']).extract()
+                              ))
+                th_k = [th2key[i] for i in th]
                 for k, v in xpaths_dict_f_h_top10.items():
-                    v = v.replace('fher_1', 'fher_%d' % idx)
-                    y = list(map(lambda prod: prod.strip(),
-                                 response.xpath(v).extract()
-                                 ))
-                    if k == 'f_h_top10_stock_rate_list':
-                        x = y
-                        for i in range(len(x)):
-                            if '不变' in x[i]:
-                                y[i] = '不变'
-                            elif '新进' in x[i]:
-                                y[i] = '新进'
-                            else:
-                                y[i] = re.findall(r'>-?\d+.\d+[万|亿]<', x[i])[0][1:-1]
-                    elif k == 'f_h_top10_stock_actual_up_down_list':
-                        x = y
-                        for i in range(len(x)):
-                            if '不变' in x[i]:
-                                y[i] = '不变'
-                            elif '新进' in x[i]:
-                                y[i] = '新进'
-                            else:
-                                y[i] = re.findall(r'>-?\d+.\d+%<', x[i])[0][1:-1]
+                    if k in th2key.values():
+                        if k in th_k:
+                            v = v.replace('fher_1', 'fher_%d' % idx)
+                            idx2 = th_k.index(k)
+                            v = v.replace('td[x]', 'td[%d]' % idx2)
+                            y = list(map(lambda prod: prod.strip(),
+                                         response.xpath(v).extract()
+                                         ))
+                            if k == 'f_h_top10_stock_rate_list':
+                                x = y
+                                for i in range(len(x)):
+                                    if '不变' in x[i]:
+                                        y[i] = '不变'
+                                    elif '新进' in x[i]:
+                                        y[i] = '新进'
+                                    else:
+                                        y[i] = re.findall(r'>-?\d+.\d+[万|亿]*<', x[i])[0][1:-1]
+                            elif k == 'f_h_top10_stock_actual_up_down_list':
+                                x = y
+                                for i in range(len(x)):
+                                    if '不变' in x[i]:
+                                        y[i] = '不变'
+                                    elif '新进' in x[i]:
+                                        y[i] = '新进'
+                                    elif '%<' in x[i]:
+                                        y[i] = re.findall(r'>-?\d+.\d+%<', x[i])[0][1:-1]
+                                    else:  # 限售股流通
+                                        y[i] = re.findall(r'>[^%><]*</', x[i])[0][1:-2]
+                        else:
+                            y = ['-'] * len(item['f_h_top10_name_list'])  # todo
+                    elif k in ['f_h_top10_date_list', 'f_h_top10_th_list']:
+                        continue
+                    else:
+                        v = v.replace('fher_1', 'fher_%d' % idx)
+                        y = list(map(lambda prod: prod.strip(),
+                                     response.xpath(v).extract()
+                                     ))
+
                     item[k] = item.get(k, []) + y
                 k = 'f_h_top10_date_list'
                 cc = len(y)
@@ -199,68 +270,105 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                 k = 'f_h_top10_order_list'
                 item[k] = item.get(k, []) + list(range(1, cc + 1))
 
-
         except Exception as e:
             print('error', code, e)
 
-            # 十大股东
-            # 十大流通股东 floating stockholder
+        # 十大股东
 
-            xpaths_dict_h_top10 = dict()
-            #
-            xpaths_dict_h_top10['h_top10_date_list'] = '//*[@id="bd_0"]/div[1]/ul/li/a/text()'
-            # 持有数量(股)	持股变化(股)	占流通股比例	实际增减持	股份类型	持股详情
-            xpaths_dict_h_top10[
-                'h_top10_name_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/th/a/text()'  #
-            xpaths_dict_h_top10[
-                'h_top10_stock_number_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[1]/text()'
-            xpaths_dict_h_top10[
-                'h_top10_stock_rate_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr[2]/td[2]'  #
-            xpaths_dict_h_top10[
-                'h_top10_stock_percent_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[3]/text()'
-            xpaths_dict_h_top10[
-                'h_top10_stock_actual_up_down_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[4]'
-            xpaths_dict_h_top10[
-                'h_top10_stock_type_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[5]/text()'  #
-            # 持股详情 todo
-            date_list = list(map(lambda prod: prod.strip(),
-                                 response.xpath(xpaths_dict_h_top10['h_top10_date_list']).extract()
-                                 ))
-            try:
-                idx = 0
-                for datei in date_list:
-                    idx += 1
-                    for k, v in xpaths_dict_h_top10.items():
-                        v = v.replace('ther_1', 'fher_%d' % idx)
+        xpaths_dict_h_top10 = dict()
+        #
+        xpaths_dict_h_top10['h_top10_date_list'] = '//*[@id="bd_0"]/div[1]/ul/li/a/text()'
+        # 持有数量(股)	持股变化(股)	占流通股比例	质押占其直接持股比 实际增减持	股份类型	持股详情
+        xpaths_dict_h_top10[
+            'h_top10_name_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/th/a/text()'  #
+        xpaths_dict_h_top10[
+            'h_top10_stock_number_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[x]/text()'
+        xpaths_dict_h_top10[
+            'h_top10_stock_rate_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[x]'  #
+        xpaths_dict_h_top10[
+            'h_top10_stock_percent_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[x]/text()'
+        xpaths_dict_h_top10[
+            'h_top10_pledge_percent_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[x]/text()'
+        xpaths_dict_h_top10[
+            'h_top10_stock_actual_up_down_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[x]'
+        xpaths_dict_h_top10[
+            'h_top10_stock_type_list'] = '//*[@id="ther_1"]/table/tbody[1]/tr/td[x]/text()'  #
+        # 持股详情 todo
+        date_list = list(map(lambda prod: prod.strip(),
+                             response.xpath(xpaths_dict_h_top10['h_top10_date_list']).extract()
+                             ))
+
+        th2key = {
+            '机构或基金名称': 'h_top10_name_list',
+            '持有数量(股)': 'h_top10_stock_number_list',
+            '持股变化(股)': 'h_top10_stock_rate_list',
+            '占总股本比例': 'h_top10_stock_percent_list',
+            '质押占其直接持股比': 'h_top10_pledge_percent_list',
+            '实际增减持': 'h_top10_stock_actual_up_down_list',
+            '股份类型': 'h_top10_stock_type_list',
+            '持股详情': ''}
+
+        try:
+            idx = 0
+            for datei in date_list:
+                idx += 1
+                xpaths_dict_h_top10['h_top10_th_list'] = '//*[@id="ther_%d"]/table/thead/tr/th/text()' % idx
+                th = list(map(lambda prod: prod.strip(),
+                              response.xpath(xpaths_dict_h_top10['h_top10_th_list']).extract()
+                              ))
+                th_k = [th2key[i] for i in th]
+                if code == "000021":
+                    print(1)
+                for k, v in xpaths_dict_h_top10.items():
+                    if k in th2key.values():
+                        if k in th_k:
+                            v = v.replace('ther_1', 'ther_%d' % idx)
+                            idx2 = th_k.index(k)
+                            v = v.replace('td[x]', 'td[%d]' % idx2)
+                            y = list(map(lambda prod: prod.strip(),
+                                         response.xpath(v).extract()
+                                         ))
+                            if k == 'h_top10_stock_rate_list':
+                                x = y
+                                for i in range(len(x)):
+                                    if '不变' in x[i]:
+                                        y[i] = '不变'
+                                    elif '新进' in x[i]:
+                                        y[i] = '新进'
+                                    else:
+                                        y[i] = re.findall(r'>-?\d+.\d+[万|亿]*<', x[i])[0][1:-1]
+                            elif k == 'h_top10_stock_actual_up_down_list':
+                                x = y
+                                for i in range(len(x)):
+                                    if '不变' in x[i]:
+                                        y[i] = '不变'
+                                    elif '新进' in x[i]:
+                                        y[i] = '新进'
+                                    elif '%<' in x[i]:
+                                        y[i] = re.findall(r'>-?\d+.\d+%<', x[i])[0][1:-1]
+                                    else:  # 限售股流通
+                                        y[i] = re.findall(r'>[^%><]*</', x[i])[0][1:-2]
+                        else:
+                            y = ['-'] * len(item['h_top10_name_list'])  # todo
+                    elif k in ['h_top10_date_list', 'h_top10_th_list']:
+                        continue
+                    else:
+                        v = v.replace('ther_1', 'ther_%d' % idx)
                         y = list(map(lambda prod: prod.strip(),
                                      response.xpath(v).extract()
                                      ))
-                        if k == 'h_top10_stock_rate_list':
-                            x = y
-                            for i in range(len(x)):
-                                if '不变' in x[i]:
-                                    y[i] = '不变'
-                                elif '新进' in x[i]:
-                                    y[i] = '新进'
-                                else:
-                                    y[i] = re.findall(r'>-?\d+.\d+[万|亿]<', x[i])[0][1:-1]
-                        elif k == 'h_top10_stock_actual_up_down_list':
-                            x = y
-                            for i in range(len(x)):
-                                if '不变' in x[i]:
-                                    y[i] = '不变'
-                                elif '新进' in x[i]:
-                                    y[i] = '新进'
-                                else:
-                                    y[i] = re.findall(r'>-?\d+.\d+%<', x[i])[0][1:-1]
-                        item[k] = item.get(k, []) + y
-                    k = 'h_top10_date_list'
-                    cc = len(y)
-                    item[k] = item.get(k, []) + [datei] * cc
-                    k = 'h_top10_order_list'
-                    item[k] = item.get(k, []) + list(range(1, 1 + cc))
-            except Exception as e:
-                print('error', code, e)
+
+                    item[k] = item.get(k, []) + y
+                k = 'h_top10_date_list'
+                cc = len(y)
+                item[k] = item.get(k, []) + [datei] * cc
+                k = 'h_top10_order_list'
+                item[k] = item.get(k, []) + list(range(1, cc + 1))
+
+        except Exception as e:
+            print('error', code, e)
+        # 十大债券持有人
+        # todo
         # 控股层级关系
         # todo
 

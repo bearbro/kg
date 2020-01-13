@@ -16,10 +16,17 @@ class KgItem(scrapy.Item):
 
 class HolderItem(scrapy.Item):
     h_date_list = scrapy.Field()
+    h_th_list = scrapy.Field()
     h_number_list = scrapy.Field()
     h_number_rate_list = scrapy.Field()
+    h_number_A_list = scrapy.Field()
+    h_number_A_rate_list = scrapy.Field()
+    h_number_B_list = scrapy.Field()
+    h_number_H_list = scrapy.Field()
     h_stock_number_list = scrapy.Field()
     h_stock_number_rate_list = scrapy.Field()
+    h_stock_number_A_list = scrapy.Field()
+    h_stock_number_A_rate_list = scrapy.Field()
     h_industry_avg_list = scrapy.Field()
 
     f_h_top10_date_list = scrapy.Field()
@@ -27,6 +34,7 @@ class HolderItem(scrapy.Item):
     f_h_top10_stock_number_list = scrapy.Field()
     f_h_top10_stock_rate_list = scrapy.Field()
     f_h_top10_stock_percent_list = scrapy.Field()
+    f_h_top10_pledge_percent_list = scrapy.Field()
     f_h_top10_stock_actual_up_down_list = scrapy.Field()
     f_h_top10_stock_type_list = scrapy.Field()
     f_h_top10_order_list = scrapy.Field()
@@ -36,6 +44,7 @@ class HolderItem(scrapy.Item):
     h_top10_stock_number_list = scrapy.Field()
     h_top10_stock_rate_list = scrapy.Field()
     h_top10_stock_percent_list = scrapy.Field()
+    h_top10_pledge_percent_list = scrapy.Field()
     h_top10_stock_actual_up_down_list = scrapy.Field()
     h_top10_stock_type_list = scrapy.Field()
     h_top10_order_list = scrapy.Field()
