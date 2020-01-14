@@ -62,7 +62,7 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                 file_name = "%s/%s_%s.html" % (self.download_path, code, self.name)
                 if not os.path.exists(file_name):
                     yield scrapy.Request(url=url, callback=self.download_parse)  # 爬取到的页面如何处理？提交给parse方法处理
-                # if code in ["000131", "000132", "000133", "000100"]:
+                # if code in ["000031", "000032", "000033", "000034"]:
                 #     break
         # return
         # TODO
@@ -77,8 +77,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
             else:
                 url = 'file://%s/%s_%s.html' % (self.download_path, code, self.name)  # 本地
             yield scrapy.Request(url=url, callback=self.parse)  # 爬取到的页面如何处理？提交给parse方法处理
-            if code in ["000031", "000032", "000033", "000034"]:
-                break
+            # if code in ["000050", "000051", "000052", "000053"]:
+            #     break
 
     # 下载网页
     def download_parse(self, response):
@@ -213,7 +213,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
             '质押占其直接持股比': 'f_h_top10_pledge_percent_list',
             '实际增减持': 'f_h_top10_stock_actual_up_down_list',
             '股份类型': 'f_h_top10_stock_type_list',
-            '持股详情': ''}
+            '持股详情': '',
+            '机构成本估算(元)': ''}
 
         try:
             idx = 0
@@ -223,7 +224,14 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                 th = list(map(lambda prod: prod.strip(),
                               response.xpath(xpaths_dict_f_h_top10['f_h_top10_th_list']).extract()
                               ))
-                th_k = [th2key[i] for i in th]
+                th_k = []
+                for thi in th:
+                    if len(thi) == 0:
+                        continue
+                    if thi not in th2key:
+                        th_k.append("")
+                    else:
+                        th_k.append(th2key[thi])
                 for k, v in xpaths_dict_f_h_top10.items():
                     if k in th2key.values():
                         if k in th_k:
@@ -254,7 +262,15 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                                     else:  # 限售股流通
                                         y[i] = re.findall(r'>[^%><]*</', x[i])[0][1:-2]
                         else:
-                            y = ['-'] * len(item['f_h_top10_name_list'])  # todo
+                            k2 = 'f_h_top10_name_list'
+                            v2 = xpaths_dict_f_h_top10[k2]
+                            v2 = v2.replace('fher_1', 'fher_%d' % idx)
+                            idx2 = th_k.index(k2)
+                            v2 = v2.replace('td[x]', 'td[%d]' % idx2)
+                            x = list(map(lambda prod: prod.strip(),
+                                         response.xpath(v2).extract()
+                                         ))
+                            y = ['-'] * len(x)  # todo
                     elif k in ['f_h_top10_date_list', 'f_h_top10_th_list']:
                         continue
                     else:
@@ -264,6 +280,8 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                                      ))
 
                     item[k] = item.get(k, []) + y
+                if len(y) > 10:
+                    print(k)
                 k = 'f_h_top10_date_list'
                 cc = len(y)
                 item[k] = item.get(k, []) + [datei] * cc
@@ -316,7 +334,14 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                 th = list(map(lambda prod: prod.strip(),
                               response.xpath(xpaths_dict_h_top10['h_top10_th_list']).extract()
                               ))
-                th_k = [th2key[i] for i in th]
+                th_k = []
+                for thi in th:
+                    if len(thi) == 0:
+                        continue
+                    if thi not in th2key:
+                        th_k.append("")
+                    else:
+                        th_k.append(th2key[thi])
                 if code == "000021":
                     print(1)
                 for k, v in xpaths_dict_h_top10.items():
@@ -349,7 +374,15 @@ class company(scrapy.Spider):  # 需要继承scrapy.Spider类
                                     else:  # 限售股流通
                                         y[i] = re.findall(r'>[^%><]*</', x[i])[0][1:-2]
                         else:
-                            y = ['-'] * len(item['h_top10_name_list'])  # todo
+                            k2 = 'h_top10_name_list'
+                            v2 = xpaths_dict_h_top10[k2]
+                            v2 = v2.replace('ther_1', 'ther_%d' % idx)
+                            idx2 = th_k.index(k2)
+                            v2 = v2.replace('td[x]', 'td[%d]' % idx2)
+                            x = list(map(lambda prod: prod.strip(),
+                                         response.xpath(v2).extract()
+                                         ))
+                            y = ['-'] * len(x)  # todo
                     elif k in ['h_top10_date_list', 'h_top10_th_list']:
                         continue
                     else:
