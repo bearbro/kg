@@ -18,6 +18,7 @@ NEWSPIDER_MODULE = 'kg.spiders'
 # USER_AGENT = 'kg (+http://www.yourdomain.com)'
 # USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) ' \
 #              'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36'
 USER_AGENTS = [
     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
     "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; Acoo Browser; SLCC1; .NET CLR 2.0.50727; Media Center PC 5.0; .NET CLR 3.0.04506)",
@@ -60,7 +61,7 @@ USER_AGENTS = [
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 2
+CONCURRENT_REQUESTS = 1
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -72,14 +73,24 @@ CONCURRENT_REQUESTS = 2
 
 # Disable cookies (enabled by default)
 # COOKIES_ENABLED = False
-
+'''
+当COOKIES_ENABLED是注释的时候scrapy默认没有开启cookie
+当COOKIES_ENABLED没有注释设置为False的时候scrapy默认使用了settings里面的cookie
+当COOKIES_ENABLED设置为True的时候scrapy就会把settings的cookie关掉，使用自定义cookie
+'''
 # Disable Telnet Console (enabled by default)
 # TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
 DEFAULT_REQUEST_HEADERS = {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     'Accept-Language': 'zh-cn,zh;q=0.7',
+    # 'Cache-Control':'max-age=0',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'Accept-Encoding': 'gzip, deflate',
+    'Host': 'basic.10jqka.com.cn',
+    # 'Cookie':'reviewJump=nojump; searchGuide=sg; usersurvey=1;uid=wKhSEWATx/or8WvPAxt/Ag==; v=AwrGreDAXlZCb9L6MqvnLPI0W_uv-45HgH8C-ZRDtt3oR6QtfIveZVAPUgxn',
 }
 
 # Enable or disable spider middlewares
@@ -92,8 +103,8 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'kg.middlewares.RandomUserAgent': 400,
-    # 'kg.SeleniumMiddleware.CommonMiddleware': 543,
+    # 'kg.middlewares.RandomUserAgent': 400,
+    # 'kg.SeleniumMiddleware.CommonMiddleware': 543,# 下载时不能注释，加载网页上的js, 好像是没cookies的
 
 }
 
@@ -105,9 +116,9 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-    'kg.pipelines.KgPipeline': 1,
-}
+# ITEM_PIPELINES = {   # 存数据库使用
+#     'kg.pipelines.KgPipeline': 1,
+# }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
