@@ -1,3 +1,5 @@
+import datetime
+import json
 import os
 import random
 import re
@@ -9,6 +11,7 @@ from selenium.webdriver.chrome.options import Options  # 使用无头浏览器
 from scrapy.http import HtmlResponse
 from kg.items import CompanyItem
 import sys
+import pandas as pd
 
 
 class newsandstock(scrapy.Spider):  # 需要继承scrapy.Spider类
@@ -17,11 +20,13 @@ class newsandstock(scrapy.Spider):  # 需要继承scrapy.Spider类
     code_filename = '../data/stock_code.txt'
     rootUrl = "http://basic.10jqka.com.cn"
     if 'win32' == sys.platform:
-        download_path = "C:/Users/77385/Desktop/data/%s" % name
+        download_path = "C:/Users/77385/Desktop/data/%s_%s" % (name, datetime.datetime.now().strftime('%Y-%m-%d'))
     else:
-        download_path = "/Users/brobear/Downloads/%s" % name
+        download_path = "/Users/brobear/Downloads/%s_%s" % (name, datetime.datetime.now().strftime('%Y-%m-%d'))
         # download_path = "../data/%s" % name
     online = False
+
+    deal_dir = os.path.join('C:/Users/77385/Desktop/data/', 'news_2021-01-29')
 
     # 实例化一个浏览器对象
     def __init__(self):
@@ -52,32 +57,35 @@ class newsandstock(scrapy.Spider):  # 需要继承scrapy.Spider类
         with open(self.code_filename, 'r', encoding='utf-8')as f:
             lines = f.readlines()
             codes = [line.split('\t')[0] for line in lines]
+            self.code2name = dict()
+            self.code2name = {line.split('\t')[0]: line.split('\t')[1][:-1] for line in lines}
 
-        if not self.online:
+        if self.deal_dir is None and not self.online:
             # 下载网页
             if not os.path.exists(self.download_path):
                 os.mkdir(self.download_path)
             for code in codes:
                 url = '%s/%s/%s.html?a=0' % (
-                self.rootUrl, code, self.name)  # http://basic.10jqka.com.cn/000001/news.html
+                    self.rootUrl, code, self.name)  # http://basic.10jqka.com.cn/000001/news.html
                 file_name = "%s/%s_%s.html" % (self.download_path, code, self.name)
                 if not os.path.exists(file_name):
                     yield scrapy.Request(url=url, callback=self.download_parse)  # 爬取到的页面如何处理？提交给parse方法处理
                     time.sleep(1 + random.randint(0, 3))
                 # if code in [ "000060", "000062", "000063", "000064"]:
                 #     break
-        return
+        # return
 
         #
         # todo 解析网页
         for code in codes:
             if self.online:
-                url = '%s/%s/%s.html' % (self.rootUrl, code, self.name)
+                url = '%s/%s/%s.html?a=0' % (self.rootUrl, code, self.name)
             else:
-                url = 'file://%s/%s_%s.html' % (self.download_path, code, self.name)  # 本地
+                url = 'file://%s/%s_%s.html' % (self.deal_dir, code, self.name)  # 本地
             yield scrapy.Request(url=url, callback=self.parse)  # 爬取到的页面如何处理？提交给parse方法处理
-            # if code in ["000002", "000031", "000032", "000033", "000034"]:
+            # if code in ["000005", "000031", "000032", "000033", "000034"]:
             #     break
+            # time.sleep(1)
 
     # 下载网页
     def download_parse(self, response):
@@ -104,146 +112,38 @@ class newsandstock(scrapy.Spider):  # 需要继承scrapy.Spider类
                                         time.localtime(os.path.getmtime(
                                             re.sub("^[C|c]/", 'c:/', response.url[7:], 1)
                                         )))
-        item = CompanyItem()
-        ##规则字典，可以从chrome获得
-        xpaths_dict_c = dict()
-        ## 公司详情
-        xpaths_dict_c['c_name'] = '//div[@class="bd"]/table/tbody/tr[1]/td[2]/span/text()'
-        xpaths_dict_c['c_territory'] = '//div[@class="bd"]/table/tbody/tr[1]/td[3]/span/text()'
-        xpaths_dict_c['c_name_en'] = '//div[@class="bd"]/table/tbody/tr[2]/td[1]/span/text()'
-        xpaths_dict_c['c_industry'] = '//div[@class="bd"]/table/tbody/tr[2]/td[2]/span/text()'
-        xpaths_dict_c['c_name_old'] = '//div[@class="bd"]/table/tbody/tr[3]/td[1]/span/text()'
-        xpaths_dict_c['c_website'] = '//div[@class="bd"]/table/tbody/tr[3]/td[2]/span/a/text()'
-        xpaths_dict_c['c_main_business'] = '//div[@class="bd"]/div/table/tbody/tr[1]/td/span/text()'
-        xpaths_dict_c['c_products'] = 'string(//div[@class="bd"]/div/table/tbody/tr[2]/td/span)'
-        # 控股股东  Selenium+Headless Chrome
-        xpaths_dict_c['c_shareholder'] = '//div[@class="bd"]/div/table/tbody/tr[3]/td/div/text()'
-        xpaths_dict_c['c_actual_controller'] = 'string(//div[@class="bd"]/div/table/tbody/tr[4]/td/div/span)'
-        xpaths_dict_c['c_final_controller'] = 'string(//div[@class="bd"]/div/table/tbody/tr[5]/td/div/span)'
-        xpaths_dict_c['c_chairman'] = '//div[@class="bd"]/div/table/tbody/tr[6]/td[1]/span/a/text()'
-        xpaths_dict_c['c_chairman_secretary'] = '//div[@class="bd"]/div/table/tbody/tr[6]/td[2]/span/a/text()'
-        xpaths_dict_c['c_legal_representative'] = '//div[@class="bd"]/div/table/tbody/tr[6]/td[3]/span/a/text()'
-        xpaths_dict_c['c_general_manager'] = '//div[@class="bd"]/div/table/tbody/tr[7]/td[1]/span/a/text()'
-        xpaths_dict_c['c_registered_capital'] = '//div[@class="bd"]/div/table/tbody/tr[7]/td[2]/span/text()'
-        xpaths_dict_c['c_employee_count'] = '//div[@class="bd"]/div/table/tbody/tr[7]/td[3]/span/text()'
-        xpaths_dict_c['c_phone'] = '//div[@class="bd"]/div/table/tbody/tr[8]/td[1]/span/text()'
-        xpaths_dict_c['c_fax'] = '//div[@class="bd"]/div/table/tbody/tr[8]/td[2]/span/text()'
-        xpaths_dict_c['c_postcode'] = '//div[@class="bd"]/div/table/tbody/tr[8]/td[3]/span/text()'
-        xpaths_dict_c['c_address'] = '//div[@class="bd"]/div/table/tbody/tr[9]/td/span/text()'
-        xpaths_dict_c['c_introduction'] = '//div[@class="bd"]/div/table/tbody/tr[10]/td/p/text()'
-        filter_char = re.compile('\\t|\\n|、')
-        item['Company'] = dict()
-        for k, v in xpaths_dict_c.items():
-            try:
-                if k == 'c_products':
-                    # item[k] = list(map(lambda prod: filter_char.sub('', prod).
-                    # strip(), response.xpath(v).extract()))#list
-                    item['Company'][k] = response.xpath(v).extract_first().strip() \
-                        .replace('\n', '').replace(' ', '').replace('\t', '')
-                else:
-                    item['Company'][k] = response.xpath(v).extract_first().strip()
-            except Exception as e:
-                print('error', code, k, e)
-        item['Company']['code'] = code
-        item['Company']['scrapy_time'] = scrapy_time
-        ##高管
-        # #name
-        # names=response.xpath('//*[@id="ml_001"]/table/tbody/tr/td[@class="tc name"]/a/text()').extract()
-        # #assignment
-        # assignments=response.xpath('//*[@id="ml_001"]/table/tbody/tr/td[@class="tl"]/text()').extract()
-        # shares_numbers=response.xpath('//*[@id="ml_001"]/table/tbody/tr/td/div/span/text()').extract()
-        item_P = dict()
-        div_ids = ['ml_001', 'ml_002', 'ml_003']
-        p_tages = ['董事会', '监事会', '高管']
-        for i in range(len(div_ids)):
-            div_id = div_ids[i]
-            xpaths_dict_p = dict()
-            xpaths_dict_p['p_name_list'] = '//div[@id="%s"]/table/tbody/tr/td[@class="tc name"]' \
-                                           '/div[contains(@class,"person_table")]/table/thead/tr/td/h3/text()' % div_id
-            xpaths_dict_p['p_job_list'] = '//div[@id="%s"]//div[contains(@class,"person_table")]' \
-                                          '/table/thead/tr/td[@class="jobs"]/text()' % div_id
-            xpaths_dict_p['p_date_list'] = '//div[@id="%s"]//div[contains(@class,"person_table")]' \
-                                           '/table/thead/tr/td[@class="date"]/text()' % div_id
-            # age sex degree
-            xpaths_dict_p['p_intro_list'] = '//div[@id="%s"]//div[contains(@class,"person_table")]' \
-                                            '/table/thead/tr/td[@class="intro"]/text()' % div_id
-            xpaths_dict_p['p_salary_list'] = '//div[@id="%s"]//div[contains(@class,"person_table")]' \
-                                             '/table/thead/tr/td[@class="salary"]/text()' % div_id
-            xpaths_dict_p['p_shares_number_list'] = '//div[@id="%s"]//div[contains(@class,"person_table")]' \
-                                                    '/table/thead/tr/td/div/span[2]/text()' % div_id
-            xpaths_dict_p['p_mainintro_list'] = '//div[@id="%s"]//div[contains(@class,"person_table")]' \
-                                                '//td[@class="mainintro"]/div/p/text()' % div_id
-            for k, v in xpaths_dict_p.items():
-                try:
-                    if k == 'p_date_list':
-                        item_k = list(map(lambda prod: prod.strip(), response.xpath(v).extract()))
-                        item_P['p_notice_date_list'] = item_P.get('p_notice_date_list', []) + item_k[::2]
-                        item_P['p_term_date_list'] = item_P.get('p_term_date_list', []) + item_k[1::2]
-                    elif k == 'p_mainintro_list':
-                        item_k = list(map(lambda prod: prod.strip(), response.xpath(v).extract()))
-                        item_P['p_mainintro_list'] = item_P.get('p_mainintro_list', []) + item_k[::2]
-                        item_P['p_mainintro_date_list'] = item_P.get('p_mainintro_date_list', []) + item_k[1::2]
-                    else:
-                        item_P[k] = item_P.get(k, []) + list(
-                            map(lambda prod: prod.strip(), response.xpath(v).extract()))
-                except Exception as e:
-                    print('error', code, k, e)
-            item_P['p_type_list'] = item_P.get('p_type_list', []) + [p_tages[i]] * len(item_P['p_mainintro_list'])
-        item['Person'] = item_P
-        ##发行相关
-        xpaths_dict_ci = dict()
-        xpaths_dict_ci['s_established_date'] = '//*[@id="publish"]/div[2]/table/tbody/tr[1]/td[1]/span/text()'
-        xpaths_dict_ci['s_issue_number'] = '//*[@id="publish"]/div[2]/table/tbody/tr[1]/td[2]/span/text()'
-        xpaths_dict_ci['s_issue_price'] = '//*[@id="publish"]/div[2]/table/tbody/tr[1]/td[3]/span/text()'
-        xpaths_dict_ci['s_listing_date'] = '//*[@id="publish"]/div[2]/table/tbody/tr[2]/td[1]/span/text()'
-        xpaths_dict_ci['s_issue_price_earnings_ratio'] = '//*[@id="publish"]/div[2]/table/tbody/tr[2]/td[2]/span/text()'
-        xpaths_dict_ci['s_expected_fundraising'] = '//*[@id="publish"]/div[2]/table/tbody/tr[2]/td[3]/span/text()'
-        xpaths_dict_ci['s_first_day_opening_price'] = '//*[@id="publish"]/div[2]/table/tbody/tr[3]/td[1]/span/text()'
-        xpaths_dict_ci['s_issuance_rate'] = '//*[@id="publish"]/div[2]/table/tbody/tr[3]/td[2]/span/text()'
-        xpaths_dict_ci['s_actual_fundraising'] = '//*[@id="publish"]/div[2]/table/tbody/tr[3]/td[3]/span/text()'
-        xpaths_dict_ci['s_lead_underwriter'] = '//*[@id="publish"]/div[2]/table/tbody/tr[4]/td/div[1]/span/text()'
-        xpaths_dict_ci['s_listing_sponsor'] = '//*[@id="publish"]/div[2]/table/tbody/tr[4]/td/div[2]/span/text()'
-        xpaths_dict_ci['s_history'] = 'string(//*[@id="publish"]/div[2]/table/tbody/tr[5]/td/p[2])'
-        item['Stock'] = dict()
-        for k, v in xpaths_dict_ci.items():
-            try:
-                if k == 's_history':
-                    item['Stock'][k] = response.xpath(v).extract_first().strip().replace(u'\u3000', ' ')
-                    if len(item['Stock'][k]) == 0:
-                        v2 = 'string(//*[@id="publish"]/div[2]/table/tbody/tr[5]/td/p[1])'
-                        item['Stock'][k] = response.xpath(v2).extract_first().strip().replace(u'\u3000', ' ')
-                else:
-                    item['Stock'][k] = response.xpath(v).extract_first().strip()
-            except Exception as e:
-                print('error', code, k, e)
-        # 参股控股公司
-
-        xpaths_dict_sc = dict()
-        xpaths_dict_sc['c_participating_companies_number'] = '//*[@id="ckg_table"]/caption/span/strong[1]/text()'
-        xpaths_dict_sc['c_consolidated_statement_number'] = '//*[@id="ckg_table"]/caption/span/strong[2]/text()'
-        xpaths_dict_sc['c_consolidated_statement_name_list'] = '//*[@id="ckg_table"]/tbody/tr/td[2]/p/text()'
-        xpaths_dict_sc['c_participation_relationship_list'] = '//*[@id="ckg_table"]/tbody/tr/td[3]/text()'
-        xpaths_dict_sc['c_participation_ratio_list'] = '//*[@id="ckg_table"]/tbody/tr/td[4]/text()'
-        xpaths_dict_sc['c_investment_amount_list'] = '//*[@id="ckg_table"]/tbody/tr/td[5]/text()'
-        xpaths_dict_sc['c_net_profit_list'] = '//*[@id="ckg_table"]/tbody/tr/td[6]/text()'
-        xpaths_dict_sc['c_merge_report_list'] = '//*[@id="ckg_table"]/tbody/tr/td[7]/text()'
-        xpaths_dict_sc['c_main_business_list'] = '//*[@id="ckg_table"]/tbody/tr/td[8]/text()'
-        xpaths_dict_sc['c_announcement_date'] = '//*[@id="ckg_table"]/caption/div/span/text()'
-        item['C_holding_C'] = dict()
-        for k, v in xpaths_dict_sc.items():
-            try:
-                if 'list' in k:
-                    item['C_holding_C'][k] = [i.strip() for i in response.xpath(v).extract()]
-                else:
-                    item['C_holding_C'][k] = response.xpath(v).extract_first().strip()
-            except Exception as e:
-                print('error', code, k, e)
-
-        # 保存数据到数据库
-        yield item
+        # xpath  '//*[@id="linkagedata"]'
+        linkagedata = response.xpath('//*[@id="linkagedata"]/text()').extract_first()
+        # # 保存数据到数据库
+        # yield item
         #
-        # # 保存
-        # filename = 'xxx'
-        # with open(filename, 'wb') as f:  # python文件操作，不多说了；
-        #     f.write(response.body)  # 刚才下载的页面去哪里了？response.body就代表了刚才下载的页面！
-        # self.log('保存文件: %s' % filename)  # 打个日志
+        # 保存
+        file_dir = self.deal_dir + '_get_newsandstock'
+        if len(self.code2name) > 0:
+            file_dir += '(带名字)'
+        if not os.path.exists(file_dir):
+            os.mkdir(file_dir)
+        file_path = os.path.join(file_dir, '%s_%s_newsandstock.csv' % (
+        code, self.code2name[code] if code in self.code2name else ''))
+        self.get_newsandstock(file_path, linkagedata)
+        self.log('保存文件: %s' % file_path)  # 打个日志
+
+    def get_newsandstock(self, file_path, linkagedata):
+        data = json.loads(linkagedata)
+        data2 = dict()
+        for keyi in ['seq', 'ctime', 'curl', 'title', 'source', 'stocks', 'author', 'type']:
+            if keyi == 'ctime':
+                data2[keyi] = [time.strftime("%Y%m%d", time.localtime(i[keyi])) if keyi in i else '' for i in data]
+            else:
+                data2[keyi] = [str(i[keyi]) if keyi in i else '' for i in data]
+
+        df = pd.DataFrame(data2)
+        if os.path.exists(file_path):
+            df2 = pd.read_csv(file_path, sep=',', encoding='utf-8', dtype=str)
+            df2.fillna('', inplace=True)
+            df = pd.concat([df, df2])
+            df.drop_duplicates(subset=['seq', 'ctime', 'curl', 'title', 'source', 'stocks', 'author', 'type'],
+                               keep='first', inplace=True)
+
+        df.sort_values(by='ctime', inplace=True)
+        df.to_csv(file_path, index=False, sep=',', encoding='utf-8')
