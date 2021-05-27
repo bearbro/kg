@@ -40,7 +40,7 @@ class newsandstock(scrapy.Spider):  # 需要继承scrapy.Spider类
             self.browser = webdriver.Chrome(executable_path='../data/chromedriver.exe',
                                             chrome_options=chrome_options)  # win
         else:
-            self.browser = webdriver.Chrome(chrome_options=chrome_options)
+            self.browser = webdriver.Chrome(executable_path='../data/chromedriver', chrome_options=chrome_options)
         # # 查看本机ip，查看代理是否起作用
         # self.browser.get("http://httpbin.org/ip")
         # print(self.browser.page_source)
