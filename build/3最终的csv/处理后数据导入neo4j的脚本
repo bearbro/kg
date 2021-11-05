@@ -1,0 +1,375 @@
+放入数据
+Neo4j页面--Manage--Open Folder--import文件夹
+MATCH (n:`经营范围`) RETURN n  
+#处理 对应关系的小函数
+def help(s):
+    x=s.strip().split(",")
+    r=""
+    for i in x:
+        r+="%s:line.%s,"%(i,i)
+    return r[:-1]
+
+
+# 导入neo4j的脚本
+
+//导入节点
+
+//导入 上市公司
+CREATE INDEX ON :上市公司(股票代码);
+
+CREATE INDEX ON :上市公司(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///公司.csv" AS line  
+MERGE (c:上市公司{股票代码:line.股票代码,名称:line.公司名称,英文名称:line.英文名称,曾用名:line.曾用名,所属申万行业:line.所属申万行业,主营业务:line.主营业务,公司网址:line.公司网址,注册资金:line.注册资金,员工人数:line.员工人数,电话:line.电话,传真:line.传真,邮政编码:line.邮政编码,办公地址:line.办公地址,公司简介:line.公司简介,所属地域:line.所属地域,简写名称:line.简写名称});
+
+// 导入 非上市公司-股东
+CREATE INDEX ON :非上市公司_股东(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///非上市公司-股东.csv" AS line  
+MERGE (c:非上市公司_股东{
+    名称:line.公司名称
+});
+
+// 导入 非上市公司-被控股
+CREATE INDEX ON :非上市公司_被控股(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///非上市公司-被控股.csv" AS line  
+MERGE (c:非上市公司_被控股{
+    名称:line.公司名称,净利润:line.净利润,公告日期:line.公告日期,主营业务:line.主营业务
+});
+
+
+// 导入 产品类型
+CREATE INDEX ON :产品类型(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///产品类型.csv" AS line  
+MERGE (c:产品类型{
+    名称:line.产品类型
+});
+
+
+
+//导入产品名称
+CREATE INDEX ON :产品(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///产品名称.csv" AS line  
+MERGE (c:产品{
+    名称:line.产品名称
+});
+
+
+
+//导入概念
+CREATE INDEX ON :概念(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///概念.csv" AS line  
+MERGE (c:概念{
+   名称:line.概念名称,概念类型:line.概念类型
+});
+
+
+
+//导入高管
+CREATE INDEX ON :高管(pid);
+
+LOAD CSV WITH HEADERS  FROM "file:///高管.csv" AS line  
+MERGE (c:高管{
+   pid:line.pid,名称:line.姓名,信息:line.信息,简介:line.简介,简介更新时间:line.简介更新时间,性别:line.性别,年龄:line.年龄,学历:line.学历
+});
+
+
+//导入 经营范围
+
+CREATE INDEX ON :经营范围(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///经营范围.csv" AS line  
+MERGE (c:经营范围{
+   名称:line.经营范围
+});
+
+//导入 申万二级行业
+
+CREATE INDEX ON :申万二级行业(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///申万二级行业.csv" AS line  
+MERGE (c:申万二级行业{
+   名称:line.申万二级行业
+});
+
+//导入 申万一级行业
+
+CREATE INDEX ON :申万一级行业(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///申万一级行业.csv" AS line  
+MERGE (c:申万一级行业{
+   名称:line.申万一级行业
+});
+
+//导入 题材要点
+
+CREATE INDEX ON :题材要点(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///题材要点.csv" AS line  
+MERGE (c:题材要点{
+   名称:line.要点名称
+});
+
+//导入 业务
+CREATE INDEX ON :业务(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///业务.csv" AS line  
+MERGE (c:业务{
+   名称:line.业务名称
+});
+
+//导入 主营业务
+CREATE INDEX ON :主营业务(名称);
+
+LOAD CSV WITH HEADERS  FROM "file:///主营业务.csv" AS line  
+MERGE (c:主营业务{
+   名称:line.主营业务
+});
+
+
+
+
+// 导入关系
+//LOAD CSV WITH HEADERS FROM "file:///xxx.csv" AS line  
+//match (from:person{id:line.from_id}),(to:person{id:line.to_id})  
+//merge (from)-[r:rel{property1:line.property1,property2:line.property2}]->(to) 
+
+
+
+
+LOAD CSV WITH HEADERS FROM "file:///非上市公司-被控股--持股--股票代码.csv" AS line  
+match (from:非上市公司_被控股{名称:line.机构名称}),(to:上市公司{股票代码:line.股票代码})  
+merge (from)-[r:持股{
+    持有数量:line.持有数量,持有价值:line.持有价值,占流通股比例:line.占流通股比例,日期:line.日期
+}]->(to) ;
+
+
+LOAD CSV WITH HEADERS FROM "file:///非上市公司-股东--持股--股票代码.csv" AS line  
+match (from:非上市公司_股东{名称:line.机构名称}),(to:上市公司{股票代码:line.股票代码})  
+merge (from)-[r:持股{
+    持有数量:line.持有数量,持有价值:line.持有价值,占流通股比例:line.占流通股比例,日期:line.日期
+}]->(to) ;
+
+
+LOAD CSV WITH HEADERS FROM "file:///高管&非高管--持股--股票代码.csv" AS line  
+match (from:高管{pid:line.机构名称}),(to:上市公司{股票代码:line.股票代码})  
+merge (from)-[r:持股{
+    持有数量:line.持有数量,持有价值:line.持有价值,占流通股比例:line.占流通股比例,日期:line.日期
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码2--持股--股票代码.csv" AS line  
+match (from:上市公司{股票代码:line.股东股票代码2}),(to:上市公司{股票代码:line.股票代码})
+merge (from)-[r:持股{
+持有数量:line.持有数量,持有价值:line.持有价值,占流通股比例:line.占流通股比例,日期:line.日期
+}]->(to) ;
+
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码---董秘-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{名称:line.公司名称})
+merge (from)-[r:董秘]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---董秘-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.公司名称})
+merge (from)-[r:董秘]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---董秘-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_股东{名称:line.公司名称})
+merge (from)-[r:董秘]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---董秘-人.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:高管{pid:line.pid})
+merge (from)-[r:董秘]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码---董事长-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{名称:line.公司名称})
+merge (from)-[r:董事长]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---董事长-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.公司名称})
+merge (from)-[r:董事长]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---董事长-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_股东{名称:line.公司名称})
+merge (from)-[r:董事长]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---董事长-人.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:高管{pid:line.pid})
+merge (from)-[r:董事长]->(to) ;
+
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码---法人代表-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{名称:line.公司名称})
+merge (from)-[r:法人代表]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---法人代表-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.公司名称})
+merge (from)-[r:法人代表]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---法人代表-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_股东{名称:line.公司名称})
+merge (from)-[r:法人代表]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---法人代表-人.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:高管{pid:line.pid})
+merge (from)-[r:法人代表]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码---实际控制人-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{名称:line.公司名称})
+merge (from)-[r:实际控制人]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---实际控制人-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.公司名称})
+merge (from)-[r:实际控制人]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---实际控制人-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_股东{名称:line.公司名称})
+merge (from)-[r:实际控制人]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---实际控制人-人.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:高管{pid:line.pid})
+merge (from)-[r:实际控制人]->(to) ;
+
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码---总经理-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{名称:line.公司名称})
+merge (from)-[r:总经理]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---总经理-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.公司名称})
+merge (from)-[r:总经理]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---总经理-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_股东{名称:line.公司名称})
+merge (from)-[r:总经理]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---总经理-人.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:高管{pid:line.pid})
+merge (from)-[r:总经理]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码---最终控制人-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{名称:line.公司名称})
+merge (from)-[r:最终控制人]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---最终控制人-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.公司名称})
+merge (from)-[r:最终控制人]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---最终控制人-公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_股东{名称:line.公司名称})
+merge (from)-[r:最终控制人]->(to) ;
+LOAD CSV WITH HEADERS FROM "file:///股票代码---最终控制人-人.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:高管{pid:line.pid})
+merge (from)-[r:最终控制人]->(to) ;
+
+
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--参控股--非上市公司-被控股.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.被参控公司})
+merge (from)-[r:参控股{
+参控关系:line.参控关系,参控比例:line.参控比例,投资金额:line.投资金额,是否合并报表:line.是否合并报表
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--参控股--股票代码.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{股票代码:line.被参控公司股票代码})
+merge (from)-[r:参控股{
+参控关系:line.参控关系,参控比例:line.参控比例,投资金额:line.投资金额,是否合并报表:line.是否合并报表
+}]->(to) ;
+
+
+//十大股东
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--十大股东--非上市公司-被控股.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.公司名称})
+merge (from)-[r:十大股东{
+持有数量:line.持有数量,占总股比例:line.占总股比例,质押占其直接持股比例:line.质押占其直接持股比例,股份类型:line.股份类型,十大股东排名:line.十大股东排名,日期:line.日期
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--十大股东--非上市公司-股东.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_股东{名称:line.公司名称})
+merge (from)-[r:十大股东{
+持有数量:line.持有数量,占总股比例:line.占总股比例,质押占其直接持股比例:line.质押占其直接持股比例,股份类型:line.股份类型,十大股东排名:line.十大股东排名,日期:line.日期
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--十大股东--高管&非高管.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:高管{pid:line.pid})
+merge (from)-[r:十大股东{
+持有数量:line.持有数量,占总股比例:line.占总股比例,质押占其直接持股比例:line.质押占其直接持股比例,股份类型:line.股份类型,十大股东排名:line.十大股东排名,日期:line.日期
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--十大股东--上市公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{股票代码:line.股东股票代码2})
+merge (from)-[r:十大股东{
+持有数量:line.持有数量,占总股比例:line.占总股比例,质押占其直接持股比例:line.质押占其直接持股比例,股份类型:line.股份类型,十大股东排名:line.十大股东排名,日期:line.日期
+}]->(to) ;
+
+
+
+//十大流通股东
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--十大流通股东--非上市公司-被控股.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_被控股{名称:line.公司名称})
+merge (from)-[r:十大流通股东{
+持有数量:line.持有数量,占流通股比例:line.占流通股比例,股份类型:line.股份类型,十大流通股东排名:line.十大流通股东排名,日期:line.日期
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--十大流通股东--非上市公司-股东.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:非上市公司_股东{名称:line.公司名称})
+merge (from)-[r:十大流通股东{
+持有数量:line.持有数量,占流通股比例:line.占流通股比例,股份类型:line.股份类型,十大流通股东排名:line.十大流通股东排名,日期:line.日期
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--十大流通股东--高管&非高管.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:高管{pid:line.pid})
+merge (from)-[r:十大流通股东{
+持有数量:line.持有数量,占流通股比例:line.占流通股比例,股份类型:line.股份类型,十大流通股东排名:line.十大流通股东排名,日期:line.日期
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码--十大流通股东--上市公司.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:上市公司{股票代码:line.股东股票代码2})
+merge (from)-[r:十大流通股东{
+持有数量:line.持有数量,占流通股比例:line.占流通股比例,股份类型:line.股份类型,十大流通股东排名:line.十大流通股东排名,日期:line.日期
+}]->(to) ;
+
+
+//todo
+LOAD CSV WITH HEADERS FROM "file:///股票代码--业务.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:业务{名称:line.业务名称})
+merge (from)-[r:业务{
+营业收入:line.营业收入,收入比例:line.收入比例,营业成本:line.营业成本,成本比例:line.成本比例,利润比例:line.利润比例,毛利润:line.毛利润
+}]->(to) ;
+
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码-具有-题材要点.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:题材要点{名称:line.要点名称})
+merge (from)-[r:要点{
+要点详情:line.要点详情
+}]->(to) ;
+
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码2产品类型.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:产品类型{名称:line.产品类型})
+merge (from)-[r:产品类型]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码2产品名称.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:产品{名称:line.产品名称})
+merge (from)-[r:产品名称]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码2概念.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:概念{名称:line.概念名称})
+merge (from)-[r:概念{
+概念解析:line.概念解析
+}]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码2经营范围.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:经营范围{名称:line.经营范围})
+merge (from)-[r:经营范围]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码2申万一级行业.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:申万一级行业{名称:line.申万一级行业})
+merge (from)-[r:申万一级行业]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码2申万二级行业.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:申万二级行业{名称:line.申万二级行业})
+merge (from)-[r:申万二级行业]->(to) ;
+
+
+LOAD CSV WITH HEADERS FROM "file:///申万二级行业2申万一级行业.csv" AS line  
+match (from:申万二级行业{名称:line.申万二级行业}),(to:申万一级行业{名称:line.申万一级行业})
+merge (from)-[r:属于]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///股票代码2主营业务.csv" AS line  
+match (from:上市公司{股票代码:line.股票代码}),(to:主营业务{名称:line.主营业务})
+merge (from)-[r:主营业务]->(to) ;
+
+LOAD CSV WITH HEADERS FROM "file:///personId2股票代码.csv" AS line  
+match (from:高管{pid:line.pid}),(to:上市公司{股票代码:line.股票代码})
+merge (from)-[r:任职{
+    职务:line.职务,薪酬:line.薪酬,直接持股数:line.直接持股数,高管类型:line.高管类型
+}]->(to) ;
