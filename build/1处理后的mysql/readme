@@ -1,3 +1,9 @@
 1-添加各表、各列的含义
 2-以2019年12月15日为基准时间，筛选出静态数据、动态数据在基准时间的最新值
 3-仅保留精简后的数据
+
+
+数据url：
+stock-kg：http://brobear.cc:6688/s/NzCrnSdpBkm379H
+small-kg：http://brobear.cc:6688/s/fByWNJ6G4tspkdx
+final-kg：http://brobear.cc:6688/s/NFAXbctsQcSCnEi
